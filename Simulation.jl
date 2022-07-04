@@ -1,4 +1,4 @@
-using Healpix, AstroLib, StatsBase, Distributions, DelimitedFiles, CoordinateTransformations,StaticArrays,Rotations, LinearAlgebra
+using Healpix, AstroLib, StatsBase, Distributions, DelimitedFiles, CoordinateTransformations,StaticArrays,Rotations, LinearAlgebra, Statistics, Plots
 
 R=[-0.735743    0.677261   0.0
    -0.0745538  -0.0809915  0.993923
@@ -97,4 +97,69 @@ nside = 64
 n = []
 while length(n)<10000000
     push!(n,Healpix.Resolution(nside))
+end
+
+function pix2vec(ipix,nside)
+    u = pix2angRing(Resolution(nside), ipix)
+    mid = ang2vec(u[1],u[2])
+    x,y,z = mid[1],mid[2],mid[3]
+    return x,y,z
+end   
+
+function fit_dipole(m, gal_cut=0, nside)
+    npix = size(m)[1]
+    bunchsize = npix
+    aa = zeros(4, 4)
+    v = zeros(4)
+    ibunch = 0
+    ipix = [x for x in 1:bunchsize]
+    ipix = ipix[1:maximum(ipix)]
+    mid = pix2vec.(ipix,nside)
+    x,y,z = [mid[i][1] for i in 1:length(mid)],[mid[i][2] for i in 1:length(mid)],[mid[i][3] for i in 1:length(mid)]
+    if gal_cut > 0
+        w = np.abs(z) >= np.sin(gal_cut * np.pi / 180)
+        ipix = ipix[w]
+        x = x[w]
+        y = y[w]
+        z = z[w]
+    end
+    mflatipix = [vec(m)[u] for u in ipix]
+    aa[1, 1] += size(ipix)[1]
+    aa[2, 1] += sum(x)
+    aa[3, 1] += sum(y)
+    aa[4, 1] += sum(z)
+    aa[2, 2] += sum(x.^2)
+    aa[3, 2] += sum(x.*y)
+    aa[4, 2] += sum(x.*z)
+    aa[3, 3] += sum(y.^2)
+    aa[4, 3] += sum(y.*z)
+    aa[4, 4] += sum(z.^2)
+    v[1] += sum(mflatipix)
+    v[2] += sum(mflatipix.*x)
+    v[3] += sum(mflatipix.*y)
+    v[4] += sum(mflatipix.*z)
+    aa[1,2] = aa[2,1]
+    aa[1,3] = aa[3,1]
+    aa[1,4] = aa[4,1]
+    aa[2,3] = aa[3,2]
+    aa[2,4] = aa[3,2]
+    aa[3,4] = aa[4,3]
+    res = inv(aa)*v
+    return res
+end
+
+function bias(t,b)
+    return norm(t+b)/norm(t)
+end
+
+function ar(a)
+    arr = []
+    while length(arr)<a
+        push!(arr,t)
+    end
+    return arr
+end
+
+function tht(t,u)
+    return acos(dot(t,u)/(norm(t)*norm(u)))
 end
