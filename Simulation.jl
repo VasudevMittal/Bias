@@ -57,7 +57,7 @@ function rotorback(d,a,b,c)
 end
 
 function doppler(d)#radec#degrees#v#m/s#arrayradec#radians
-    a,b,p,c,v = 167,-7,5,3*(10^8), 370000
+    a,b,p,c,v = 167,-7,5,3*(10^8), 369000
     gamma = 1/sqrt(1-((v/c)^2))
     ra,dec = deg2rad(a),deg2rad(b)
     dangle = acos(cos(d[2])*cos(dec)*cos(d[1] - ra)+sin(d[2])*sin(dec))
@@ -106,7 +106,7 @@ function pix2vec(ipix,nside)
     return x,y,z
 end   
 
-function fit_dipole(m, gal_cut=0, nside)
+function fit_dipole(m, nside, gal_cut=0)
     npix = size(m)[1]
     bunchsize = npix
     aa = zeros(4, 4)
@@ -117,7 +117,7 @@ function fit_dipole(m, gal_cut=0, nside)
     mid = pix2vec.(ipix,nside)
     x,y,z = [mid[i][1] for i in 1:length(mid)],[mid[i][2] for i in 1:length(mid)],[mid[i][3] for i in 1:length(mid)]
     if gal_cut > 0
-        w = np.abs(z) >= np.sin(gal_cut * np.pi / 180)
+        w = abs.(z) .>= sin(gal_cut * pi / 180)
         ipix = ipix[w]
         x = x[w]
         y = y[w]
@@ -150,14 +150,6 @@ end
 
 function bias(t,b)
     return norm(t+b)/norm(t)
-end
-
-function ar(a)
-    arr = []
-    while length(arr)<a
-        push!(arr,t)
-    end
-    return arr
 end
 
 function tht(t,u)
