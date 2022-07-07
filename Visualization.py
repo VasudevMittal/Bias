@@ -1,3 +1,4 @@
+#visualizing the simulated dipoles.
 import matplotlib.pyplot as plt
 import numpy as np
 import astropy.coordinates as ap
