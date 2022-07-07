@@ -1,5 +1,6 @@
 using Healpix, AstroLib, StatsBase, Distributions, DelimitedFiles, CoordinateTransformations,StaticArrays,Rotations, LinearAlgebra, Statistics, Plots
 
+#Function to convert from Galactic to Super-Galactic Coordinates
 R=[-0.735743    0.677261   0.0
    -0.0745538  -0.0809915  0.993923
     0.673145    0.731271   0.110081]
@@ -11,6 +12,7 @@ function gal2sgal(l,b)#dd
     return SGB     
 end
 
+#Function to generate a full sky map of "a" sources.
 function dataset(a)
     b = []
     c = [deg2rad(x) for x in vec(rand(Uniform(0,360),1,a))]
@@ -26,6 +28,7 @@ function dataset(a)
     return b
 end
 
+#Function to convert from lat-lon to cartesian coordinates.
 function s2c(alpha, delta)
     alpha,delta = deg2rad(alpha),deg2rad(delta)
     x = cos(alpha) * cos(delta)
@@ -34,6 +37,7 @@ function s2c(alpha, delta)
     return [x, y, z]
 end
 
+#Function to convert from cartesian coordinates to lat-lon.
 function c2s(x, y, z)
     h = sqrt((x^2)+(y^2))
     alpha,delta = rad2deg(atan(y, x)),rad2deg(atan(z, h))
@@ -41,6 +45,7 @@ function c2s(x, y, z)
     return [alpha, delta]
 end
 
+#Function to rotate the sky from celestial to native coordinates using the ZXZ euler rotation with angles of a,b and c.
 function rotor(d,a,b,c)
     x = s2c(d[1],d[2])
     ma = transpose(RotZXZ(deg2rad(90+a),deg2rad(90-b),deg2rad(-(c-90))))
@@ -48,7 +53,7 @@ function rotor(d,a,b,c)
     return c2s(y[1],y[2],y[3])
 end
 
-
+#Function for inverse rotation of sky from native to celestial coordinates.
 function rotorback(d,a,b,c)
     x = s2c(d[1],d[2])
     mb = transpose(RotZXZ(deg2rad(c-90),deg2rad(b-90),deg2rad(-90-a)))
@@ -56,7 +61,8 @@ function rotorback(d,a,b,c)
     return c2s(y[1],y[2],y[3])
 end
 
-function doppler(d)#radec#degrees#v#m/s#arrayradec#radians
+#Function for giving a doppler boost to the sources in the direction of CMB dipole. Here, the dipole is located at (167,-7) in RA-DEC and the velocity of the observer is 369km/s.
+function doppler(d)
     a,b,p,c,v = 167,-7,5,3*(10^8), 369000
     gamma = 1/sqrt(1-((v/c)^2))
     ra,dec = deg2rad(a),deg2rad(b)
@@ -71,12 +77,14 @@ function doppler(d)#radec#degrees#v#m/s#arrayradec#radians
     return [deg2rad(k),deg2rad(l)]
 end
 
+#Function to apply a galactic cut to a sky in equatorial coordinates within galactic latitudes of +-c degrees about galactic equator.
 function galcut(a,b,c)
     if abs(euler(rad2deg(a),rad2deg(b),1)[2])>c
         return [a,b]
     end
 end
 
+#Function to apply a super-galactic cut to a sky in equatorial coordinates within galactic latitudes of +-c degrees about super-galactic equator.
 function sgalcut(a,b,c)
     u1,v1 = euler(rad2deg(a),rad2deg(b),1)[1],euler(rad2deg(a),rad2deg(b),1)[2]#rd
     if abs(gal2sgal(u1,v1))>c
@@ -84,6 +92,7 @@ function sgalcut(a,b,c)
     end
 end
 
+#Function to convert the sky map into a Healpix map on ring order with a given nside.
 function scattomap(m, ra, dec , nside)
     data = ang2pixRing.(m,lat2colat.(dec), ra)
     hmap = counts(data,1:Healpix.nside2npix(nside))
@@ -93,12 +102,14 @@ function scattomap(m, ra, dec , nside)
     return hmap
 end
 
+#Creation of this array is useful for further processing.
 nside = 64
 n = []
 while length(n)<10000000
     push!(n,Healpix.Resolution(nside))
 end
 
+#Function to convert a Healpix Pixel of Ring Order to a vector in cartesian coordinates
 function pix2vec(ipix,nside)
     u = pix2angRing(Resolution(nside), ipix)
     mid = ang2vec(u[1],u[2])
@@ -106,6 +117,7 @@ function pix2vec(ipix,nside)
     return x,y,z
 end   
 
+#Function to implement fit_dipole routine of healpy. Presently, if a mask is to be applied, the pixel values should be 0. Maps with bad pixels or nside>>128 are not supported.
 function fit_dipole(m, nside, gal_cut=0)
     npix = size(m)[1]
     bunchsize = npix
@@ -148,10 +160,12 @@ function fit_dipole(m, nside, gal_cut=0)
     return res
 end
 
+#Function to calculate the bias.
 function bias(t,b)
     return norm(t+b)/norm(t)
 end
 
+#Function to calculate the offset from a given dipole.
 function tht(t,u)
     return acos(dot(t,u)/(norm(t)*norm(u)))
 end
