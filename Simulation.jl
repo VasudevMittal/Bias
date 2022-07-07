@@ -61,7 +61,7 @@ function rotorback(d,a,b,c)
     return c2s(y[1],y[2],y[3])
 end
 
-#Function for giving a doppler boost to the sources in the direction of CMB dipole. Here, the dipole is located at (167,-7) in RA-DEC and the velocity of the observer is 369km/s.
+#Function for giving a doppler boost to the sources in the direction of CMB dipole. Here, the dipole is located at (167,-7) in RA-DEC and the velocity of the observer is 369km/s. 5 is the pole_longitude.
 function doppler(d)
     a,b,p,c,v = 167,-7,5,3*(10^8), 369000
     gamma = 1/sqrt(1-((v/c)^2))
