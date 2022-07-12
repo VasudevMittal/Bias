@@ -117,15 +117,14 @@ function pix2vec(ipix,nside)
     return x,y,z
 end   
 
-#Function to implement fit_dipole routine of healpy. Presently, if a mask is to be applied, the pixel values should be 0. Maps with bad pixels or nside>>128 are not supported.
-function fit_dipole(m, nside, gal_cut=0)
+#Function to implement fit_dipole routine of healpy. Maps with nside>>128 are not supported.
+function fit_dipole(m, nside, gal_cut=0,badval=UNSEEN)
     npix = size(m)[1]
     bunchsize = npix
     aa = zeros(4, 4)
     v = zeros(4)
-    ibunch = 0
     ipix = [x for x in 1:bunchsize]
-    ipix = ipix[1:maximum(ipix)]
+    ipix = [ipix[i] for i in 1:length(ipix) if m[i]!=badval && isfinite(m[i])!=false]
     mid = pix2vec.(ipix,nside)
     x,y,z = [mid[i][1] for i in 1:length(mid)],[mid[i][2] for i in 1:length(mid)],[mid[i][3] for i in 1:length(mid)]
     if gal_cut > 0
