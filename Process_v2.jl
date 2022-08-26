@@ -25,13 +25,11 @@ end
 coord = []
 l = c2s.(dx,dy,dz)
 lon,lat = [l[i][1] for i in 1:length(l)],[l[i][2] for i in 1:length(l)]
-gal = euler.(lon,lat,1)
-galra,galdec = [gal[i][1] for i in 1:length(gal)],[gal[i][2] for i in 1:length(gal)]
-for i in 1:length(galra)
-    if galra[i]>180
-        galra[i]-=360
+for i in 1:length(lon)
+    if lon[i]>180
+        lon[i]-=360
     end
-    push!(coord,[galra[i],galdec[i]])
+    push!(coord,[lon[i],lat[i]])
 end
 writedlm("o.dat",coord,"\t")
 writedlm("output.dat",filelist,"\t")
